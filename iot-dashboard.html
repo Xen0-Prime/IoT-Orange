@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>IoT Guadeloupe - Live Data</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="iot-dashboard.css">
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>IoT Dashboard</h1>
+                    <span>Orange LTE-M</span>
+                </div>
+            </div>
+            <div class="status-badge" id="statusBadge">
+                <span class="status-dot"></span>
+                <span id="statusText">Déconnecté</span>
+            </div>
+        </header>
+
+        <div class="location-card">
+            <div class="location-icon">🏝️</div>
+            <div class="location-info">
+                <h2>Guadeloupe</h2>
+                <p>Capteur BME280 + LSM6DSOX via LTE-M</p>
+                <span class="device-id">SampleOAGua</span>
+                <span class="device-id" style="margin-left: 6px;">urn:lo:nsid:SampleData</span>
+            </div>
+        </div>
+
+        <p class="section-title">Données en temps réel</p>
+
+        <div class="data-grid">
+            <div class="data-card temperature" id="cardTemperature">
+                <div class="card-header">
+                    <div class="card-label">
+                        <div class="card-icon">🌡️</div>
+                        <div>
+                            <div class="card-title">Température</div>
+                            <div class="card-topic">dev/data/guadeloupe/temperature</div>
+                        </div>
+                    </div>
+                    <div class="card-timestamp" id="timeTemperature">--:--:--</div>
+                </div>
+                <div class="card-value">
+                    <span class="value-number" id="valueTemperature">--</span>
+                    <span class="value-unit">°C</span>
+                </div>
+                <div class="mini-chart" id="chartTemperature"></div>
+            </div>
+
+            <div class="data-card pressure" id="cardPressure">
+                <div class="card-header">
+                    <div class="card-label">
+                        <div class="card-icon">🔵</div>
+                        <div>
+                            <div class="card-title">Pression</div>
+                            <div class="card-topic">dev/data/guadeloupe/pression</div>
+                        </div>
+                    </div>
+                    <div class="card-timestamp" id="timePressure">--:--:--</div>
+                </div>
+                <div class="card-value">
+                    <span class="value-number" id="valuePressure">--</span>
+                    <span class="value-unit">Pa</span>
+                </div>
+                <div class="mini-chart" id="chartPressure"></div>
+            </div>
+
+            <div class="data-card humidity" id="cardHumidity">
+                <div class="card-header">
+                    <div class="card-label">
+                        <div class="card-icon">💧</div>
+                        <div>
+                            <div class="card-title">Humidité</div>
+                            <div class="card-topic">dev/data/guadeloupe/humidite</div>
+                        </div>
+                    </div>
+                    <div class="card-timestamp" id="timeHumidity">--:--:--</div>
+                </div>
+                <div class="card-value">
+                    <span class="value-number" id="valueHumidity">--</span>
+                    <span class="value-unit">%</span>
+                </div>
+                <div class="mini-chart" id="chartHumidity"></div>
+            </div>
+
+            <div class="data-card position" id="cardPosition">
+                <div class="card-header">
+                    <div class="card-label">
+                        <div class="card-icon">🧭</div>
+                        <div>
+                            <div class="card-title">Position (Gyroscope)</div>
+                            <div class="card-topic">dev/data/guadeloupe/position</div>
+                        </div>
+                    </div>
+                    <div class="card-timestamp" id="timePosition">--:--:--</div>
+                </div>
+                <div class="position-values">
+                    <div class="axis-value">
+                        <span class="axis-label">X</span>
+                        <span class="axis-number" id="valuePosX">--</span>
+                        <span class="axis-unit">mdps</span>
+                    </div>
+                    <div class="axis-value">
+                        <span class="axis-label">Y</span>
+                        <span class="axis-number" id="valuePosY">--</span>
+                        <span class="axis-unit">mdps</span>
+                    </div>
+                    <div class="axis-value">
+                        <span class="axis-label">Z</span>
+                        <span class="axis-number" id="valuePosZ">--</span>
+                        <span class="axis-unit">mdps</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="connection-panel">
+            <div class="panel-header">
+                <span class="panel-title">🔌 Connexion MQTT</span>
+            </div>
+            <div class="broker-info">
+                Broker: <span>test.mosquitto.org</span><br>
+                Port WebSocket: <span>8081</span>
+            </div>
+            <div class="topics-list">
+                <div class="topic-item" id="topicTemp">
+                    <span class="topic-status"></span>
+                    dev/data/guadeloupe/temperature
+                </div>
+                <div class="topic-item" id="topicPressure">
+                    <span class="topic-status"></span>
+                    dev/data/guadeloupe/pression
+                </div>
+                <div class="topic-item" id="topicHumidity">
+                    <span class="topic-status"></span>
+                    dev/data/guadeloupe/humidite
+                </div>
+                <div class="topic-item" id="topicPosition">
+                    <span class="topic-status"></span>
+                    dev/data/guadeloupe/position
+                </div>
+            </div>
+            <button class="connect-btn" id="connectBtn" onclick="toggleConnection()">
+                Se connecter au broker
+            </button>
+        </div>
+
+        <div class="log-panel">
+            <p class="section-title">Journal d'activité</p>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-message">En attente de connexion...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="iot-dashboard.js"></script>
+</body>
+</html>
