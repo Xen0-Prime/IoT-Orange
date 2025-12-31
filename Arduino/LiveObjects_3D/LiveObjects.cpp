@@ -12,7 +12,7 @@
 
 LiveObjects::LiveObjects() : mHl7812client(), mMqttClient(MQTT_BUFFER) {        
     mMqttClient.begin(mHl7812client);
-    mMqttClient.setTimeout(5000);
+    mMqttClient.setTimeout(500);
 }
 
 LiveObjects::~LiveObjects() {

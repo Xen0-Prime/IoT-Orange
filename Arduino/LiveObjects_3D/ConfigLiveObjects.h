@@ -47,7 +47,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 #define RAT_TYPE                LTE   //value : GSM or LTE
 #define APN_NAME                "orangeiot"       
 /*#define DEVICE_DELAY            3000000*/
-#define DEVICE_DELAY            10000
+#define DEVICE_DELAY            2000  // Envoi toutes les 2 secondes
 #define CMD_EDRX                 "AT+KEDRXCFG=2,4,1,3"
 #define CMD_PSM                  "AT+CPSMS=1,,,\"00100100\",\"00001000\""
 #define ENABLE_EDRX              "ON"    // possible value : ON or OFF

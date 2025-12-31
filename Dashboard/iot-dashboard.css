@@ -361,6 +361,198 @@ header {
     color: var(--text-muted);
 }
 
+/* Data format info */
+.data-format-info {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(255, 170, 0, 0.1);
+    border: 1px solid rgba(255, 170, 0, 0.3);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--warning);
+}
+
+.data-format-info.success {
+    background: rgba(0, 214, 143, 0.1);
+    border-color: rgba(0, 214, 143, 0.3);
+    color: var(--success);
+}
+
+.format-icon {
+    font-size: 16px;
+}
+
+.format-text {
+    flex: 1;
+    line-height: 1.4;
+}
+
+/* 3D Visualization avec Three.js */
+.visualization-3d {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.viz-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: linear-gradient(135deg, #0A0A0F 0%, #12121A 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+#threejsCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Angle indicators overlay pour 3D */
+.angle-indicators-3d {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.angle-box-3d {
+    flex: 1;
+    background: rgba(18, 18, 26, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+.angle-label-3d {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.angle-value-3d {
+    font-size: 16px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--orange-primary), var(--text-primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.angle-unit-3d {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+
+/* Controls overlay */
+.controls-overlay {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+}
+
+.control-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(18, 18, 26, 0.85);
+    padding: 6px 12px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+}
+
+.reset-3d-btn {
+    background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px var(--orange-glow);
+}
+
+.reset-3d-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px var(--orange-glow);
+}
+
+.reset-3d-btn:active {
+    transform: translateY(0);
+}
+
+/* Status message in 3D visualization */
+.status-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(18, 18, 26, 0.95);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    backdrop-filter: blur(10px);
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 80%;
+    text-align: center;
+    transition: opacity 0.3s ease;
+}
+
+.status-message.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.status-icon {
+    font-size: 32px;
+}
+
+.status-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.status-message.success {
+    border-color: rgba(0, 214, 143, 0.5);
+}
+
+.status-message.success .status-icon {
+    filter: drop-shadow(0 0 8px var(--success));
+}
+
+.status-message.error {
+    border-color: rgba(255, 170, 0, 0.5);
+}
+
+.status-message.error .status-icon {
+    filter: drop-shadow(0 0 8px var(--warning));
+}
+
 /* Mini Chart */
 .mini-chart {
     height: 40px;

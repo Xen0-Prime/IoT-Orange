@@ -19,7 +19,7 @@ without limitation the rights to use, copy, modify, merge, publish,
 
 distribute, sublicense, and/or sell copies of the Software, and to
 permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+the conditions:
 
 The above copyright notice and this permission notice shall be
 included in all copies or substantial portions of the Software.
@@ -56,7 +56,12 @@ LSM6DSOXSensor lsm6dsoxSensor = LSM6DSOXSensor(&Wire, LSM6DSOX_I2C_ADD_L);
   String position_gyro;
   bool   connected_var;
 
-
+// ===== VARIABLES POUR ORIENTATION 3D =====
+float pitch = 0;  // Inclinaison avant/arrière
+float roll = 0;   // Inclinaison gauche/droite  
+float yaw = 0;    // Rotation horizontale
+unsigned long lastOrientationTime = 0;
+unsigned long lastYawResetTime = 0;  // Pour reset automatique du yaw
 
 /* This code example shows how to send data to LiveObjects servers using MQTT protocol with the HL7812.
 IMPORTANT: LiveObjects credentials must be replaced in ConfigLiveObjects.h file first. */
@@ -126,7 +131,56 @@ void setupSensor() {
     Serial.println("Receviced correct ID for LSM6DSOX sensor");
   }
 
+  // Initialiser le timer pour le calcul d'orientation
+  lastOrientationTime = millis();
+  lastYawResetTime = millis();  // Timer pour reset yaw
+  
   Serial.println("Start Setup Sensor");
+  Serial.println("✅ Orientation 3D activée");
+  Serial.println("⚙️  Zone morte gyroscope: 5 dps");
+  Serial.println("🔄 Reset automatique yaw: toutes les 30s");
+}
+
+// ===== FONCTION CALCUL ORIENTATION 3D =====
+void calculateOrientation(int32_t acceleration[3], int32_t rotation[3]) {
+  // Convertir accélération de mg vers g
+  float accelX = acceleration[0] / 1000.0;
+  float accelY = acceleration[1] / 1000.0;
+  float accelZ = acceleration[2] / 1000.0;
+  
+  // Convertir rotation de mdps vers dps
+  float gyroX = rotation[0] / 1000.0;
+  float gyroY = rotation[1] / 1000.0;
+  float gyroZ = rotation[2] / 1000.0;
+  
+  // ===== PITCH et ROLL depuis accéléromètre (STABLE) =====
+  pitch = atan2(-accelX, sqrt(accelY * accelY + accelZ * accelZ)) * 180.0 / PI;
+  roll = atan2(accelY, accelZ) * 180.0 / PI;
+  
+  // ===== YAW depuis gyroscope (intégration) =====
+  unsigned long currentTime = millis();
+  float deltaTime = (currentTime - lastOrientationTime) / 1000.0; // secondes
+  lastOrientationTime = currentTime;
+  
+  // ⭐ ZONE MORTE : ignorer les petites valeurs (seuil à 5 dps)
+  const float GYRO_DEAD_ZONE = 5.0; // degrés par seconde
+  
+  if (abs(gyroZ) > GYRO_DEAD_ZONE) {
+    yaw += gyroZ * deltaTime;
+  }
+  // Sinon, on considère que l'objet est immobile et on n'intègre pas
+  
+  // Normaliser yaw entre -180° et +180°
+  while (yaw > 180.0) yaw -= 360.0;
+  while (yaw < -180.0) yaw += 360.0;
+  
+  // ⭐ RESET AUTOMATIQUE du yaw toutes les 30 secondes pour éviter dérive
+  const unsigned long YAW_RESET_INTERVAL = 30000; // 30 secondes
+  if (currentTime - lastYawResetTime > YAW_RESET_INTERVAL) {
+    yaw = 0;
+    lastYawResetTime = currentTime;
+    Serial.println("🔄 Yaw réinitialisé automatiquement");
+  }
 }
 
 bool getSensorInfo()
@@ -147,26 +201,47 @@ bool getSensorInfo()
   // Serial.println("Temp:" + temperature + "°C, Humidity:" + humidite + "%, Pressure:" + pression) + "Pa");
 
   /* Read accelerometer */
+  int32_t acceleration[3] = {0, 0, 0};
   uint8_t acceleroStatus;
   lsm6dsoxSensor.Get_X_DRDY_Status(&acceleroStatus);
   if (acceleroStatus == 1) { /* Status == 1 means a new data is available */
-    int32_t acceleration[3];
     lsm6dsoxSensor.Get_X_Axes(acceleration);
     /* Plot data (friendly format for the Serial Plotter) */
     Serial.println("Accel_X:" + String(acceleration[0]) + "mg, Accel_Y:" + String(acceleration[1]) + "mg, Accel_Z:" + String(acceleration[2]) + "mg");
   }
 
   /* Read gyroscope */
+  int32_t rotation[3] = {0, 0, 0};
   uint8_t gyroStatus;
   lsm6dsoxSensor.Get_G_DRDY_Status(&gyroStatus);
   if (gyroStatus == 1) { // Status == 1 means a new data is available
-    int32_t rotation[3];
     lsm6dsoxSensor.Get_G_Axes(rotation);
     /* Plot data in milli degrees per second (friendly format for the Serial Plotter) */
     Serial.println("Rot_X:" + String(rotation[0]) + "mdps, Rot_Y:" + String(rotation[1]) + "mdps, Rot_Z:" + String(rotation[2]) + "mdps");
     
-    /* Build position JSON object for MQTT */
-    position_gyro = "{\"x\":" + String(rotation[0]) + ",\"y\":" + String(rotation[1]) + ",\"z\":" + String(rotation[2]) + "}";
+    // ===== CALCULER L'ORIENTATION 3D =====
+    calculateOrientation(acceleration, rotation);
+    
+    // ===== CONSTRUIRE LE JSON COMPLET POUR DASHBOARD 3D =====
+    // Format: {gyro:{x,y,z}, accel:{x,y,z}, orientation:{pitch,roll,yaw}}
+    
+    // Convertir les valeurs
+    float gyroX_dps = rotation[0] / 1000.0;
+    float gyroY_dps = rotation[1] / 1000.0;
+    float gyroZ_dps = rotation[2] / 1000.0;
+    
+    float accelX_g = acceleration[0] / 1000.0;
+    float accelY_g = acceleration[1] / 1000.0;
+    float accelZ_g = acceleration[2] / 1000.0;
+    
+    // Construire le JSON
+    position_gyro = "{";
+    position_gyro += "\"gyro\":{\"x\":" + String(gyroX_dps, 2) + ",\"y\":" + String(gyroY_dps, 2) + ",\"z\":" + String(gyroZ_dps, 2) + "},";
+    position_gyro += "\"accel\":{\"x\":" + String(accelX_g, 3) + ",\"y\":" + String(accelY_g, 3) + ",\"z\":" + String(accelZ_g, 3) + "},";
+    position_gyro += "\"orientation\":{\"pitch\":" + String(pitch, 1) + ",\"roll\":" + String(roll, 1) + ",\"yaw\":" + String(yaw, 1) + "}";
+    position_gyro += "}";
+    
+    Serial.println("🧭 Orientation: Pitch=" + String(pitch, 1) + "° Roll=" + String(roll, 1) + "° Yaw=" + String(yaw, 1) + "°");
   }
   
 	return true;
@@ -254,7 +329,7 @@ bool publishSensorInfo() {
     
     bool status = getSensorInfo();
     Serial.println("publishSensorInfo : Temp = " + temperature + " °C, Humidity = " + humidite + " %, Pressure = " + pression + " Pa");
-    Serial.println("publishSensorInfo : Position = " + position_gyro);
+    Serial.println("publishSensorInfo : Position 3D = " + position_gyro);
     
 /* case liveObjects
     status = mLiveObjects->publish(String(STREAM_ID_CONFIG).c_str(), temperature.c_str(), TAG_TEMPERATURE);
@@ -266,8 +341,16 @@ bool publishSensorInfo() {
     status = mLiveObjects->publish_mosquitto(String(STREAM_ID_DATA).c_str(), temperature.c_str(), TAG_TEMPERATURE, 1);
     status = mLiveObjects->publish_mosquitto(String(STREAM_ID_DATA).c_str(), humidite.c_str(), TAG_HUMIDITE, 3);
     status = mLiveObjects->publish_mosquitto(String(STREAM_ID_DATA).c_str(), pression.c_str(), TAG_PRESSION, 2);
+    
+    // ⭐ PUBLICATION POSITION 3D AVEC FORMAT COMPLET
     status = mLiveObjects->publish_mosquitto(String(STREAM_ID_DATA).c_str(), position_gyro.c_str(), TAG_POSITION, 4);
    
+    if (status) {
+      Serial.println("✅ Position 3D publiée avec succès");
+    } else {
+      Serial.println("❌ Erreur publication Position 3D");
+    }
+    
     delay(1000);
     gpio.digitalWrite(BLUE_LED, HIGH); // LED Off
     
@@ -426,6 +509,7 @@ void setup()
   Serial.begin(115200);
   delay(2000);
   Serial.println("Start test Liveobjects");
+  Serial.println("=== VERSION AVEC ORIENTATION 3D ===");
 
   enable_battery_check();
 

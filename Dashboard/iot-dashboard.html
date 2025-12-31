@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="iot-dashboard.css">
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <div class="bg-pattern"></div>
@@ -104,27 +105,53 @@
                     <div class="card-label">
                         <div class="card-icon">🧭</div>
                         <div>
-                            <div class="card-title">Position (Gyroscope)</div>
+                            <div class="card-title">Position 3D dans l'espace</div>
                             <div class="card-topic">dev/data/guadeloupe/position</div>
                         </div>
                     </div>
                     <div class="card-timestamp" id="timePosition">--:--:--</div>
                 </div>
-                <div class="position-values">
-                    <div class="axis-value">
-                        <span class="axis-label">X</span>
-                        <span class="axis-number" id="valuePosX">--</span>
-                        <span class="axis-unit">mdps</span>
-                    </div>
-                    <div class="axis-value">
-                        <span class="axis-label">Y</span>
-                        <span class="axis-number" id="valuePosY">--</span>
-                        <span class="axis-unit">mdps</span>
-                    </div>
-                    <div class="axis-value">
-                        <span class="axis-label">Z</span>
-                        <span class="axis-number" id="valuePosZ">--</span>
-                        <span class="axis-unit">mdps</span>
+                
+                <!-- 3D Visualization avec Three.js -->
+                <div class="visualization-3d">
+                    <div class="viz-container" id="canvasContainer">
+                        <!-- Canvas Three.js sera inséré ici -->
+                        
+                        <!-- Angle indicators overlay -->
+                        <div class="angle-indicators-3d">
+                            <div class="angle-box-3d">
+                                <div class="angle-label-3d">Pitch</div>
+                                <div class="angle-value-3d">
+                                    <span id="angleX">0</span><span class="angle-unit-3d">°</span>
+                                </div>
+                            </div>
+                            <div class="angle-box-3d">
+                                <div class="angle-label-3d">Roll</div>
+                                <div class="angle-value-3d">
+                                    <span id="angleY">0</span><span class="angle-unit-3d">°</span>
+                                </div>
+                            </div>
+                            <div class="angle-box-3d">
+                                <div class="angle-label-3d">Yaw</div>
+                                <div class="angle-value-3d">
+                                    <span id="angleZ">0</span><span class="angle-unit-3d">°</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Controls overlay -->
+                        <div class="controls-overlay">
+                            <div class="control-hint">🖱️ Glisser pour pivoter la vue</div>
+                            <button class="reset-3d-btn" onclick="resetOrientation()" title="Réinitialiser">
+                                🔄
+                            </button>
+                        </div>
+                        
+                        <!-- Status message -->
+                        <div class="status-message" id="statusMessage3D">
+                            <span class="status-icon">⏳</span>
+                            <span class="status-text">En attente des données d'orientation...</span>
+                        </div>
                     </div>
                 </div>
             </div>
